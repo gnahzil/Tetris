@@ -11,12 +11,15 @@ var curSpeed = 1;
 var curScore = 0;
 var maxScore = 0;
 
+//标识游戏是否正在进行
+var isPlaying = true;
+
 //canvas画板
 var tetrisCanvas;
 var tetrisCtx;
 
 //定义颜色组
-var colors = ["white", "red", "blue", "green", "orange", "yellow", "pink", "grey", "black"];
+var colors = ["white", "red", "blue", "green", "orange", "yellow", "pink", "black", "grey"];
 //固定住的方块颜色
 var solidColor = 8;
 
@@ -47,17 +50,17 @@ var blockArr = [
 	],
 	//第三种：田
 	[
+		{ x: COLS/2-1, y: 0, color: 3},
 		{ x: COLS/2, y: 0, color: 3},
-		{ x: COLS/2+1, y: 0, color: 3},
-		{ x: COLS/2, y: 1, color: 3},
-		{ x: COLS/2+1, y: 1, color: 3}
+		{ x: COLS/2-1, y: 1, color: 3},
+		{ x: COLS/2, y: 1, color: 3}
 	],
 	//第四种：L
 	[
-		{ x: COLS/2, y: 0, color: 4},
-		{ x: COLS/2, y: 1, color: 4},
-		{ x: COLS/2, y: 2, color: 4},
-		{ x: COLS/2+1, y: 2, color: 4}
+		{ x: COLS/2-1, y: 0, color: 4},
+		{ x: COLS/2-1, y: 1, color: 4},
+		{ x: COLS/2-1, y: 2, color: 4},
+		{ x: COLS/2, y: 2, color: 4}
 	],
 	//第五种：J
 	[
@@ -160,15 +163,14 @@ var initBlock = function() {
 		{x: blockArr[rand][2].x, y: blockArr[rand][2].y, color: blockArr[rand][2].color},
 		{x: blockArr[rand][3].x, y: blockArr[rand][3].y, color: blockArr[rand][3].color},
 	];
-
-	if (checkCanDown()) {
-		//每个方块涂上颜色
-		for (let i=0; i<currentBlocks.length; i++) {
-			var cur = currentBlocks[i];
+	//每个方块涂上颜色
+	for (let i=0; i<currentBlocks.length; i++) {
+		var cur = currentBlocks[i];
+		if (tetrisStatus[cur.y][cur.x] == NO_BLOCK) {
 			tetrisCtx.fillStyle = colors[cur.color];
 			tetrisCtx.fillRect(cur.x * CELL_WIDTH + 1, cur.y * CELL_HEIGHT + 1,
 								CELL_WIDTH - 2, CELL_HEIGHT - 2);
-		}
+		}		
 	}
 };
 
@@ -194,7 +196,7 @@ var moveDown =  function() {
 					}
 				}
 
-				//isPlaying = false;
+				isPlaying = false;
 				clearInterval(curTimer);
 				return;
 			}
@@ -269,3 +271,157 @@ var drawBlock = function() {
 		}
 	}
 };
+
+//绑定键盘事件
+window.onkeydown = function(evt) {
+
+	if (!isPlaying)
+		return;
+
+	switch(evt.keyCode) {
+
+		//向下的箭头
+		case 40:			
+			moveDown();
+			break;
+		//向左的箭头
+		case 37:
+			moveLeft();
+			break;
+		//向右的箭头
+		case 39:
+			moveRight();
+			break;
+		//向上的箭头
+		case 38:
+			rotate();
+			break;
+	}
+}
+
+//方块组左移
+var moveLeft = function() {
+
+	var canLeft = true;
+
+	for (let i=0; i<currentBlocks.length; i++) {
+
+		//如果到了最左边,或者左边有固定方块
+		if (currentBlocks[i].x <= 0 ||
+			tetrisStatus[currentBlocks[i].y][currentBlocks[i].x-1] != NO_BLOCK) {
+			canLeft = false;
+			break;
+		}
+	}
+
+	if (canLeft) {
+		//左移钱每个方块变白色
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			tetrisCtx.fillStyle = colors[NO_BLOCK];
+			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
+		}
+
+		//左移方块组
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			cur.x--;			
+		}
+
+		//左移后的方块组涂上颜色
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			tetrisCtx.fillStyle = colors[cur.color];
+			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
+		}
+	}
+}
+
+//方块组右移
+var moveRight = function() {
+
+	var canRight = true;
+
+	for (let i=0; i<currentBlocks.length; i++) {
+
+		//如果到了最右边,或者右边有固定方块
+		if (currentBlocks[i].x >= COLS-1 ||
+			tetrisStatus[currentBlocks[i].y][currentBlocks[i].x+1] != NO_BLOCK) {
+			canRight = false;
+			break;
+		}
+	}
+
+	if (canRight) {
+		//右移前每个方块变白色
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			tetrisCtx.fillStyle = colors[NO_BLOCK];
+			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
+		}
+
+		//右移方块组
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			cur.x++;			
+		}
+
+		//右移后的方块组涂上颜色
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			tetrisCtx.fillStyle = colors[cur.color];
+			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
+		}
+	}
+}
+
+//方块组旋转
+var rotate = function() {
+
+	var canRotate = true;
+
+	for (let i=0; i<currentBlocks.length; i++) {
+
+		var preX = currentBlocks[i].x;
+		var preY = currentBlocks[i].y;
+		//以第三块为旋转中心
+		if (i!=2) {
+			var afterRotateX = currentBlocks[2].x + preY - currentBlocks[2].y;
+			var afterRotateY = currentBlocks[2].y + currentBlocks[2].x - preX;
+
+			if (afterRotateX < 0 || afterRotateX > COLS-1 || afterRotateY < 0 || afterRotateY > ROWS-1 || //不能超过边界
+				tetrisStatus[afterRotateY][afterRotateX] != NO_BLOCK //旋转后的位置有固定方块
+				) {
+				canRotate = false;
+				break;
+			}
+
+		}
+	}
+
+	if (canRotate) {
+		//旋转前变白
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			tetrisCtx.fillStyle = colors[NO_BLOCK];
+			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
+		}
+
+		//全部旋转
+		for (let i=0; i<currentBlocks.length; i++) {
+			var preX = currentBlocks[i].x;
+			var preY = currentBlocks[i].y;
+			if (i != 2) {
+				currentBlocks[i].x = currentBlocks[2].x + preY - currentBlocks[2].y;
+				currentBlocks[i].y = currentBlocks[2].y + currentBlocks[2].x -preX;
+			}
+		}
+
+		//上色
+		for (let i=0; i<currentBlocks.length; i++) {
+			var cur = currentBlocks[i];
+			tetrisCtx.fillStyle = colors[cur.colors];
+			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
+		}
+	}
+}
