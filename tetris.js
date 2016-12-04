@@ -205,7 +205,7 @@ var moveDown =  function() {
 		}
 
 		//判断是否可以消除行
-		//lineFull();
+		lineFull();
 
 		//记录游戏状态
 		localStorage.setItem("tetrisStatus", JSON.stringify(tetrisStatus));
@@ -265,9 +265,11 @@ var drawBlock = function() {
 		for (let j=0; j<tetrisStatus[i].length; j++) {
 			if (tetrisStatus[i][j] != NO_BLOCK) {
 				tetrisCtx.fillStyle = colors[tetrisStatus[i][j]];
-				tetrisCtx.fillRect( j * CELL_WIDTH + 1, i * CELL_HEIGHT + 1,
+			} else 
+				tetrisCtx.fillStyle = colors[NO_BLOCK];
+
+			tetrisCtx.fillRect( j * CELL_WIDTH + 1, i * CELL_HEIGHT + 1,
 									CELL_WIDTH - 2, CELL_HEIGHT - 2);
-			}
 		}
 	}
 };
@@ -424,4 +426,42 @@ var rotate = function() {
 			tetrisCtx.fillRect(cur.x*CELL_WIDTH+1, cur.y*CELL_HEIGHT+1, CELL_WIDTH-2, CELL_HEIGHT-2);
 		}
 	}
+}
+
+var lineFull = function() {
+
+	for (let i=0; i<tetrisStatus.length; i++) {
+		var flag = true;
+		for (let j=0; j<tetrisStatus[i].length; j++) {
+			if (tetrisStatus[i][j] == NO_BLOCK) {
+				flag = false;
+				break;
+			}
+		}
+
+		if (flag) {
+
+			//改变积分
+			document.getElementById("curScoreEle").innerText = curScore += 100;
+			localStorage.setItem("curScore", curScore);
+
+			if (curScore >= curSpeed * curSpeed * 500) {
+				document.getElementById("curSpeedEle").innerText = curSpeed += 1;
+				localStorage.setItem("curSpeed", curSpeed);
+				clearInterval(curTimer);
+				curTimer = setInterval("moveDown()", 500/curSpeed);
+			}
+
+			//全满行上面的方块下落
+			for (let k=i; k>0; k--) {
+				for (let l=0; l<tetrisStatus[k].length; l++) {
+					tetrisStatus[k][l] = tetrisStatus[k-1][l];
+				}
+			}
+			for (let l=0; l<tetrisStatus[0].length; l++)
+				tetrisStatus[0][l] = NO_BLOCK;
+		}
+		drawBlock();
+	}
+
 }
